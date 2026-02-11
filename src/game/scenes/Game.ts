@@ -1,76 +1,87 @@
-import { Scene } from "phaser";
-import { createPlayer } from "../components/player/Player";
+import { BaseScene } from "../../scenes/BaseScene";
+import { Player } from "../../entities/Player";
 import { createBackground } from "../components/background/Background";
 import { setupCamera } from "../components/camera/Camera";
 import { createCoinSprites } from "../components/collectables/Coin";
 import { createPlatforms } from "../components/platforms/Platforms";
-import {
-  handleDown,
-  handleJump,
-  handleJumpDown,
-  handleLeftMovement,
-  handleRightMovement,
-  setupInput,
-} from "../components/inputs/keyboardInputs";
+import { ASSETS } from "../constants";
 
-export class Game extends Scene {
-  camera: Phaser.Cameras.Scene2D.Camera;
-  background: Phaser.GameObjects.Image;
-  msg_text: Phaser.GameObjects.Text;
-  cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
-  player: Phaser.Physics.Arcade.Sprite;
-  platforms: Phaser.Physics.Arcade.StaticGroup;
-  score: number = 0;
-  scoreText: Phaser.GameObjects.Text;
+export class Game extends BaseScene {
+
+  private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private player!: Player;
+  private platforms: Phaser.Physics.Arcade.StaticGroup;
+  private scoreText: Phaser.GameObjects.Text;
 
   constructor() {
     super("Game");
   }
 
   create() {
-    setupCamera.call(this);
-    createBackground.call(this);
-    this.player = createPlayer.call(this);
-    this.platforms = createPlatforms.call(this);
-    createCoinSprites.call(this);
-    setupInput.call(this);
-    this.score = 0;
-    this.scoreText = this.add.text(16, 16, "score: 0");
+    this.setupCamera();
+    this.createBackground();
+    this.createPlayer();
+    this.createPlatforms();
+    this.createCoins();
+    this.setupInput();
+    this.setupScoreDisplay();
+    this.setupEventListeners();
   }
 
   update() {
-    if (!this.cursors || !this.player || this.player.body === null) return;
+    if (!this.player) return;
+    this.player.update();
+  }
 
-    if (
-      this.cursors.left.isDown &&
-      this.cursors.up.isDown &&
-      this.player.body.touching.down
-    ) {
-      handleLeftMovement.call(this);
-      handleJump.call(this);
+  private setupCamera(): void {
+    setupCamera.call(this);
+  }
+
+  private createBackground(): void {
+    createBackground.call(this);
+  }
+
+  private createPlayer(): void {
+    this.player = new Player(this, {
+      x: 100,
+      y: 440,
+      assetKey: ASSETS.DUDE
+    });
+    this.physics.world.enable(this.player);
+    this.add.existing(this.player);
+    this.player.initialize();
+  }
+
+  private createPlatforms(): void {
+    this.platforms = createPlatforms.call(this);
+    this.physics.add.collider(this.player, this.platforms);
+  }
+
+  private createCoins(): void {
+    createCoinSprites.call(this);
+  }
+
+  private setupInput(): void {
+    this.cursors = this.input.keyboard?.createCursorKeys();
+    if (this.cursors) {
+      this.player.setInputs(this.cursors);
     }
-    if (
-      this.cursors.right.isDown &&
-      this.cursors.up.isDown &&
-      this.player.body.touching.down
-    ) {
-      handleRightMovement.call(this);
-      handleJump.call(this);
-    }
-    if (this.cursors.left.isDown) {
-      handleLeftMovement.call(this);
-    }
-    if (this.cursors.right.isDown) {
-      handleRightMovement.call(this);
-    }
-    if (this.cursors.left.isUp && this.cursors.right.isUp) {
-      handleDown.call(this);
-    }
-    if (this.cursors.up.isDown && this.player.body.touching.down) {
-      handleJump.call(this);
-    }
-    if (this.player.body.touching.none && this.cursors.down.isDown) {
-      handleJumpDown.call(this);
-    }
+  }
+
+  private setupScoreDisplay(): void {
+    const currentScore = this.gameState.getScore();
+    this.scoreText = this.add.text(16, 16, `score: ${currentScore}`);
+  }
+
+  protected setupEventListeners(): void {
+    this.eventBus.on('scoreChanged', (score: number) => {
+      this.scoreText.setText(`score: ${score}`);
+    });
+
+    this.eventBus.on('gameOver', () => {
+      this.scene.start('GameOver');
+    });
+
+    super.setupEventListeners();
   }
 }

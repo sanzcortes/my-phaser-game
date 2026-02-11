@@ -1,6 +1,6 @@
 import { ASSETS, PLATFORMS } from "../../constants";
 
-export function createPlatforms(this: any) {
+export function createPlatforms(this: any): Phaser.Physics.Arcade.StaticGroup {
   const platforms = this.physics.add.staticGroup();
   // Base platform
   platforms
@@ -22,6 +22,5 @@ export function createPlatforms(this: any) {
       .refreshBody();
   }
 
-  this.physics.add.collider(this.player, platforms);
   return platforms;
 }

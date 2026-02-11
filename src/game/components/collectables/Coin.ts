@@ -1,25 +1,28 @@
 import { ASSETS, SPRITES } from "../../constants";
 
 export function collectCoin(
-  _player: any,
-  coin: { disableBody: (arg0: boolean, arg1: boolean) => void },
+  _player: Phaser.Types.Physics.Arcade.GameObjectWithBody,
+  coin: Phaser.Types.Physics.Arcade.GameObjectWithBody,
 ) {
-  coin.disableBody(true, true);
+  const coinSprite = coin as Phaser.Physics.Arcade.Sprite;
+  coinSprite.disableBody(true, true);
 }
 
 export function onCollectCoin(
   this: any,
-  _player: any,
-  coin: { x: number; y: number },
+  _player: Phaser.Types.Physics.Arcade.GameObjectWithBody,
+  coin: Phaser.Types.Physics.Arcade.GameObjectWithBody,
 ) {
+  const coinSprite = coin as Phaser.Physics.Arcade.Sprite;
+  
   //display text +1
-  const msg = this.add.text(coin.x, coin.y, "+1", {
+  const msg = this.add.text(coinSprite.x, coinSprite.y, "+1", {
     fontSize: "16px",
     fill: "#000000",
   });
   this.tweens.add({
     targets: msg,
-    y: coin.y - 50,
+    y: coinSprite.y - 50,
     alpha: 0,
     duration: 800,
     ease: "Power1",
@@ -27,9 +30,18 @@ export function onCollectCoin(
       msg.destroy();
     },
   });
-  // You can add score increment or sound effects here
-  this.score += 1;
-  this.scoreText.setText("score: " + this.score);
+  
+  // Use GameStateManager to track score
+  import("../../../core/GameStateManager").then(({ GameStateManager }) => {
+    const gameState = GameStateManager.getInstance();
+    gameState.addScore(1);
+    
+    // Emit coin collected event
+    import("../../../core/EventBus").then(({ EventBus }) => {
+      const eventBus = EventBus.getInstance();
+      eventBus.emit('coinCollected', { x: coinSprite.x, y: coinSprite.y, value: 1 });
+    });
+  });
 }
 
 export function createCoinSprites(this: any) {
@@ -42,8 +54,9 @@ export function createCoinSprites(this: any) {
       stepX: SPRITES.COINS.SPACING,
     },
   });
-  coins.children.iterate((child) => {
-    (child as Phaser.Physics.Arcade.Sprite).setBounceY(
+  coins.children.iterate((child: Phaser.Types.Physics.Arcade.GameObjectWithBody) => {
+    const childSprite = child as Phaser.Physics.Arcade.Sprite;
+    childSprite.setBounceY(
       Phaser.Math.FloatBetween(0.4, 0.8),
     );
   });
