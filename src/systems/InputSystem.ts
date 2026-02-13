@@ -1,5 +1,5 @@
-import { InputState, InputConfig } from './types/InputTypes';
-import { EventBus } from '../core/EventBus';
+import { InputState, InputConfig } from "./types/InputTypes";
+import { EventBus } from "../core/EventBus";
 
 export class InputSystem {
   private scene: Phaser.Scene;
@@ -11,16 +11,19 @@ export class InputSystem {
   private previousState: InputState;
   private enabled: boolean = true;
 
-  constructor(scene: Phaser.Scene, config: InputConfig = { 
-    enableKeyboard: true, 
-    enablePointer: true, 
-    enableGamepad: false 
-  }) {
-    console.log('🔧 InputSystem CONSTRUCTOR - Starting initialization');
+  constructor(
+    scene: Phaser.Scene,
+    config: InputConfig = {
+      enableKeyboard: true,
+      enablePointer: true,
+      enableGamepad: false,
+    },
+  ) {
+    console.log("🔧 InputSystem CONSTRUCTOR - Starting initialization");
     this.scene = scene;
     this.config = config;
     this.eventBus = EventBus.getInstance();
-    
+
     this.state = {
       left: false,
       right: false,
@@ -30,21 +33,21 @@ export class InputSystem {
       shift: false,
       mouseX: 0,
       mouseY: 0,
-      pointerDown: false
+      pointerDown: false,
     };
 
     this.previousState = { ...this.state };
-    
-    console.log('🔧 InputSystem CONSTRUCTOR - About to initialize');
+
+    console.log("🔧 InputSystem CONSTRUCTOR - About to initialize");
     this.initialize();
-    console.log('🔧 InputSystem CONSTRUCTOR - Initialization complete');
+    console.log("🔧 InputSystem CONSTRUCTOR - Initialization complete");
   }
 
   private initialize(): void {
     if (this.config.enableKeyboard) {
       this.setupKeyboard();
     }
-    
+
     if (this.config.enablePointer) {
       this.setupPointer();
     }
@@ -57,84 +60,103 @@ export class InputSystem {
   }
 
   private setupKeyboard(): void {
-    console.log('⌨️ InputSystem SETUP_KEYBOARD - Starting keyboard setup');
-    
+    console.log("⌨️ InputSystem SETUP_KEYBOARD - Starting keyboard setup");
+
     // Setup cursor keys
     this.cursors = this.scene.input.keyboard?.createCursorKeys();
-    console.log('⌨️ InputSystem SETUP_KEYBOARD - Cursors created:', !!this.cursors);
+    console.log(
+      "⌨️ InputSystem SETUP_KEYBOARD - Cursors created:",
+      !!this.cursors,
+    );
 
     // Setup additional keys
     const keyMap = {
-      'SPACE': 'space',
-      'SHIFT': 'shift',
-      'A': 'left',
-      'D': 'right',
-      'W': 'up',
-      'S': 'down'
+      SPACE: "space",
+      SHIFT: "shift",
+      A: "left",
+      D: "right",
+      W: "up",
+      S: "down",
     };
 
     Object.entries(keyMap).forEach(([phaserKey, stateKey]) => {
       const key = this.scene.input.keyboard?.addKey(phaserKey);
       if (key) {
         this.keys.set(stateKey, key);
-        console.log(`⌨️ InputSystem SETUP_KEYBOARD - Key ${phaserKey} -> ${stateKey} mapped`);
+        console.log(
+          `⌨️ InputSystem SETUP_KEYBOARD - Key ${phaserKey} -> ${stateKey} mapped`,
+        );
       }
     });
-    
-    console.log('⌨️ InputSystem SETUP_KEYBOARD - Keyboard setup complete');
+
+    console.log("⌨️ InputSystem SETUP_KEYBOARD - Keyboard setup complete");
   }
 
   private setupPointer(): void {
-    this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+    this.scene.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.state.pointerDown = true;
       this.state.mouseX = pointer.x;
       this.state.mouseY = pointer.y;
-      this.eventBus.emit('pointerDown', { x: pointer.x, y: pointer.y });
+      this.eventBus.emit("pointerDown", { x: pointer.x, y: pointer.y });
     });
 
-    this.scene.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+    this.scene.input.on("pointerup", (pointer: Phaser.Input.Pointer) => {
       this.state.pointerDown = false;
       this.state.mouseX = pointer.x;
       this.state.mouseY = pointer.y;
-      this.eventBus.emit('pointerUp', { x: pointer.x, y: pointer.y });
+      this.eventBus.emit("pointerUp", { x: pointer.x, y: pointer.y });
     });
 
-    this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+    this.scene.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       this.state.mouseX = pointer.x;
       this.state.mouseY = pointer.y;
-      this.eventBus.emit('pointerMove', { x: pointer.x, y: pointer.y });
+      this.eventBus.emit("pointerMove", { x: pointer.x, y: pointer.y });
     });
   }
 
   private setupGamepad(): void {
-    this.scene.input.gamepad?.on('down', (pad: Phaser.Input.Gamepad.Gamepad, button: Phaser.Input.Gamepad.Button) => {
-      this.eventBus.emit('gamepadDown', { pad, button });
-    });
+    this.scene.input.gamepad?.on(
+      "down",
+      (
+        pad: Phaser.Input.Gamepad.Gamepad,
+        button: Phaser.Input.Gamepad.Button,
+      ) => {
+        this.eventBus.emit("gamepadDown", { pad, button });
+      },
+    );
 
-    this.scene.input.gamepad?.on('up', (pad: Phaser.Input.Gamepad.Gamepad, button: Phaser.Input.Gamepad.Button) => {
-      this.eventBus.emit('gamepadUp', { pad, button });
-    });
+    this.scene.input.gamepad?.on(
+      "up",
+      (
+        pad: Phaser.Input.Gamepad.Gamepad,
+        button: Phaser.Input.Gamepad.Button,
+      ) => {
+        this.eventBus.emit("gamepadUp", { pad, button });
+      },
+    );
   }
 
   private setupEventListeners(): void {
-    console.log('🎧 InputSystem SETUP_EVENT_LISTENERS - Setting up update listener');
-    this.scene.events.on('update', () => {
+    console.log(
+      "🎧 InputSystem SETUP_EVENT_LISTENERS - Setting up update listener",
+    );
+    this.scene.events.on("update", () => {
       this.update();
     });
-    console.log('🎧 InputSystem SETUP_EVENT_LISTENERS - Update listener set');
+    console.log("🎧 InputSystem SETUP_EVENT_LISTENERS - Update listener set");
   }
 
   public update(): void {
-    console.log('🔄 InputSystem UPDATE - Update method called');
+    console.log("🔄 InputSystem UPDATE - Update method called");
     if (!this.enabled) {
-      console.log('🔄 InputSystem UPDATE - System disabled, returning');
+      console.log("🔄 InputSystem UPDATE - System disabled, returning");
       return;
     }
 
     if (this.config.enableKeyboard) {
       this.updateKeyboardState();
     } else {
-      console.log('🔄 InputSystem UPDATE - Keyboard not enabled in config');
+      console.log("🔄 InputSystem UPDATE - Keyboard not enabled in config");
     }
   }
 
@@ -149,9 +171,16 @@ export class InputSystem {
 
     // Update additional keys (combine with OR so both arrow keys and WASD work)
     this.keys.forEach((key, stateKey) => {
-      const keyName = stateKey as 'left' | 'right' | 'up' | 'down' | 'space' | 'shift';
+      const keyName = stateKey as
+        | "left"
+        | "right"
+        | "up"
+        | "down"
+        | "space"
+        | "shift";
       if (keyName in this.state) {
-        (this.state as any)[keyName] = (this.state as any)[keyName] || key.isDown;
+        (this.state as any)[keyName] =
+          (this.state as any)[keyName] || key.isDown;
       }
     });
 
@@ -160,18 +189,33 @@ export class InputSystem {
   }
 
   private emitKeyChanges(): void {
-    type InputKey = 'left' | 'right' | 'up' | 'down' | 'space' | 'shift' | 'pointerDown';
-    const keys: InputKey[] = ['left', 'right', 'up', 'down', 'space', 'shift', 'pointerDown'];
-    
-    keys.forEach(stateKey => {
+    type InputKey =
+      | "left"
+      | "right"
+      | "up"
+      | "down"
+      | "space"
+      | "shift"
+      | "pointerDown";
+    const keys: InputKey[] = [
+      "left",
+      "right",
+      "up",
+      "down",
+      "space",
+      "shift",
+      "pointerDown",
+    ];
+
+    keys.forEach((stateKey) => {
       const currentValue = this.state[stateKey];
       const previousValue = this.previousState[stateKey];
-      
+
       if (currentValue !== previousValue) {
-        this.eventBus.emit('keyChanged', { 
-          key: stateKey, 
+        this.eventBus.emit("keyChanged", {
+          key: stateKey,
           isDown: currentValue,
-          isUp: !currentValue 
+          isUp: !currentValue,
         });
       }
     });
@@ -184,21 +228,29 @@ export class InputSystem {
     return { ...this.state };
   }
 
-  public isPressed(key: 'left' | 'right' | 'up' | 'down' | 'space' | 'shift' | 'pointerDown'): boolean {
+  public isPressed(
+    key: "left" | "right" | "up" | "down" | "space" | "shift" | "pointerDown",
+  ): boolean {
     const result = this.state[key];
     console.log(`🔑 InputSystem IS_PRESSED(${key}): ${result}`);
     return result;
   }
 
-  public justPressed(key: 'left' | 'right' | 'up' | 'down' | 'space' | 'shift' | 'pointerDown'): boolean {
+  public justPressed(
+    key: "left" | "right" | "up" | "down" | "space" | "shift" | "pointerDown",
+  ): boolean {
     const current = this.state[key];
     const previous = this.previousState[key];
     const result = current && !previous;
-    console.log(`🔑 InputSystem JUST_PRESSED(${key}): ${result} (current: ${current}, previous: ${previous})`);
+    console.log(
+      `🔑 InputSystem JUST_PRESSED(${key}): ${result} (current: ${current}, previous: ${previous})`,
+    );
     return result;
   }
 
-  public justReleased(key: 'left' | 'right' | 'up' | 'down' | 'space' | 'shift' | 'pointerDown'): boolean {
+  public justReleased(
+    key: "left" | "right" | "up" | "down" | "space" | "shift" | "pointerDown",
+  ): boolean {
     const current = this.state[key];
     const previous = this.previousState[key];
     return !current && previous;
@@ -221,7 +273,7 @@ export class InputSystem {
   }
 
   public isJumping(): boolean {
-    return this.justPressed('up') || this.justPressed('space');
+    return this.justPressed("up") || this.justPressed("space");
   }
 
   public getMousePosition(): { x: number; y: number } {
@@ -229,7 +281,7 @@ export class InputSystem {
   }
 
   public destroy(): void {
-    this.keys.forEach(key => key.destroy());
+    this.keys.forEach((key) => key.destroy());
     this.scene.input.removeAllListeners();
   }
 }
