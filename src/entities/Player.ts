@@ -1,11 +1,12 @@
-import { Physics } from 'phaser';
-import { PlayerConfig, PlayerState } from './types/EntityTypes';
-import { ANIMATIONS, ASSETS, ANIMATION_FRAMES } from '../game/constants';
+import { Physics } from "phaser";
+import { PlayerConfig, PlayerState } from "./types/EntityTypes";
+import { ANIMATIONS, ASSETS, ANIMATION_FRAMES } from "../game/constants";
+import { InputSystem } from "../systems/InputSystem";
 
 export class Player extends Physics.Arcade.Sprite {
   private config: PlayerConfig;
   private playerState: PlayerState;
-  private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private inputSystem?: InputSystem;
 
   constructor(scene: Phaser.Scene, config: Partial<PlayerConfig> = {}) {
     const defaultConfig: PlayerConfig = {
@@ -17,18 +18,20 @@ export class Player extends Physics.Arcade.Sprite {
       jumpVelocity: -330,
       jumpDownVelocity: 300,
       gravityY: 300,
-      ...config
+      ...config,
     };
 
     super(scene, defaultConfig.x, defaultConfig.y, defaultConfig.assetKey);
-    
+
     this.config = defaultConfig;
     this.playerState = {
       isJumping: false,
       isMovingLeft: false,
       isMovingRight: false,
-      currentVelocity: { x: 0, y: 0 }
+      currentVelocity: { x: 0, y: 0 },
     };
+
+    scene.physics.world.enable(this);
   }
 
   public initialize(): void {
@@ -51,7 +54,7 @@ export class Player extends Physics.Arcade.Sprite {
 
   private setupAnimations(): void {
     const scene = this.scene;
-    
+
     scene.anims.create({
       key: ANIMATIONS.LEFT,
       frames: scene.anims.generateFrameNumbers(ASSETS.DUDE, {
@@ -79,75 +82,111 @@ export class Player extends Physics.Arcade.Sprite {
     });
   }
 
-  public setInputs(cursors: Phaser.Types.Input.Keyboard.CursorKeys): void {
-    this.cursors = cursors;
+  public setInputs(inputSystem: InputSystem): void {
+    console.log("🎯 Player SET_INPUTS - Setting InputSystem on player");
+    this.inputSystem = inputSystem;
+    console.log("🎯 Player SET_INPUTS - InputSystem reference stored");
   }
 
   public update(): void {
-    if (!this.cursors || !this.body) return;
+    console.log("🎯 Player UPDATE - Player update called");
+    if (!this.inputSystem) {
+      console.log("🎯 Player UPDATE - No InputSystem, returning");
+      return;
+    }
+    if (!this.body) {
+      console.log("🎯 Player UPDATE - No body, returning");
+      return;
+    }
 
-    this.playerState.currentVelocity = { x: this.body.velocity.x, y: this.body.velocity.y };
-    
+    this.playerState.currentVelocity = {
+      x: this.body.velocity.x,
+      y: this.body.velocity.y,
+    };
+
     // Reset movement states
     this.playerState.isMovingLeft = false;
     this.playerState.isMovingRight = false;
     this.playerState.isJumping = !this.body.touching.down;
 
+    console.log("🎯 Player UPDATE - About to handle movement");
     // Handle input
     this.handleMovement();
     this.handleJump();
   }
 
   private handleMovement(): void {
-    if (!this.cursors || !this.body) return;
+    console.log("🎯 Player HANDLE_MOVEMENT - Starting movement handling");
+    if (!this.inputSystem || !this.body) {
+      console.log(
+        "🎯 Player HANDLE_MOVEMENT - Missing InputSystem or body, returning",
+      );
+      return;
+    }
+
+    const leftPressed = this.inputSystem.isPressed("left");
+    const rightPressed = this.inputSystem.isPressed("right");
+    const upPressed = this.inputSystem.isPressed("up");
+
+    console.log("🎯 Player HANDLE_MOVEMENT - Input states:", {
+      left: leftPressed,
+      right: rightPressed,
+      up: upPressed,
+    });
 
     // Left movement with jump
-    if (this.cursors.left.isDown && this.cursors.up.isDown && this.body.touching.down) {
+    if (leftPressed && upPressed && this.body.touching.down) {
+      console.log("🎯 Player HANDLE_MOVEMENT - Left + Jump detected");
       this.moveLeft();
       this.jump();
       return;
     }
 
     // Right movement with jump
-    if (this.cursors.right.isDown && this.cursors.up.isDown && this.body.touching.down) {
+    if (rightPressed && upPressed && this.body.touching.down) {
+      console.log("🎯 Player HANDLE_MOVEMENT - Right + Jump detected");
       this.moveRight();
       this.jump();
       return;
     }
 
     // Left movement only
-    if (this.cursors.left.isDown) {
+    if (leftPressed) {
+      console.log("🎯 Player HANDLE_MOVEMENT - Left movement detected");
       this.moveLeft();
       return;
     }
 
     // Right movement only
-    if (this.cursors.right.isDown) {
+    if (rightPressed) {
+      console.log("🎯 Player HANDLE_MOVEMENT - Right movement detected");
       this.moveRight();
       return;
     }
 
     // Stop movement
-    if (this.cursors.left.isUp && this.cursors.right.isUp) {
+    if (!leftPressed && !rightPressed) {
+      console.log("🎯 Player HANDLE_MOVEMENT - Stop movement detected");
       this.stopMoving();
     }
   }
 
   private handleJump(): void {
-    if (!this.cursors || !this.body) return;
+    if (!this.inputSystem || !this.body) return;
 
-    // Jump only
-    if (this.cursors.up.isDown && this.body.touching.down) {
+    // Jump only - use justPressed for better responsiveness
+    if (this.inputSystem.justPressed("up") && this.body.touching.down) {
       this.jump();
     }
 
     // Jump down when in air
-    if (this.body.touching.none && this.cursors.down.isDown) {
+    if (this.body.touching.none && this.inputSystem.isPressed("down")) {
       this.jumpDown();
     }
   }
 
   private moveLeft(): void {
+    console.log("🏃 Player MOVE_LEFT - Moving left");
     if (!this.body) return;
 
     this.playerState.isMovingLeft = true;
@@ -159,9 +198,11 @@ export class Player extends Physics.Arcade.Sprite {
       this.setVelocityX(-this.config.accelerationX);
       this.anims.play(ANIMATIONS.LEFT, true);
     }
+    console.log("🏃 Player MOVE_LEFT - Velocity set to:", this.body.velocity.x);
   }
 
   private moveRight(): void {
+    console.log("🏃 Player MOVE_RIGHT - Moving right");
     if (!this.body) return;
 
     this.playerState.isMovingRight = true;
@@ -173,18 +214,29 @@ export class Player extends Physics.Arcade.Sprite {
       this.setVelocityX(this.config.accelerationX);
       this.anims.play(ANIMATIONS.RIGHT, true);
     }
+    console.log(
+      "🏃 Player MOVE_RIGHT - Velocity set to:",
+      this.body.velocity.x,
+    );
   }
 
   private stopMoving(): void {
+    console.log("🛑 Player STOP_MOVING - Stopping movement");
     this.setVelocityX(0);
     this.anims.play(ANIMATIONS.TURN, true);
+    console.log(
+      "🛑 Player STOP_MOVING - Velocity set to:",
+      this.body.velocity.x,
+    );
   }
 
   private jump(): void {
+    console.log("🦘 Player JUMP - Jumping");
     this.setVelocityY(this.config.jumpVelocity);
   }
 
   private jumpDown(): void {
+    console.log("🔽 Player JUMP_DOWN - Jumping down");
     this.setVelocityY(this.config.jumpDownVelocity);
   }
 
