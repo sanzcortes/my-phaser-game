@@ -7,6 +7,7 @@ export interface PlayerConfig {
   jumpVelocity: number;
   jumpDownVelocity: number;
   gravityY: number;
+  scale?: number;
 }
 
 export interface PlayerState {

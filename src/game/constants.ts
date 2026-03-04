@@ -2,6 +2,9 @@
 export const ASSETS = {
   BACKGROUND: "background",
   GREY_CAT: "grey_cat",
+  GREY_CAT_WALK: "grey_cat_walk",
+  GREY_CAT_ATTACK: "grey_cat_attack",
+  GREY_CAT_JUMP: "grey_cat_jump",
   DUDE: "dude",
   COIN: "coin",
   ENEMY: "enemy",
@@ -15,6 +18,8 @@ export const ANIMATIONS = {
   TURN: "turn",
   JUMP_LEFT: "jump_left",
   JUMP_RIGHT: "jump_right",
+  ATTACK_LEFT: "attack_left",
+  ATTACK_RIGHT: "attack_right",
 } as const;
 
 // Default player asset
@@ -78,18 +83,27 @@ export const PLATFORMS = {
 } as const;
 
 // Frame numbers for animations
-// Row 1 (y=0): Walk Left (0-3), Idle (4), Walk Right (5-8)
-// Row 3 (y=128): Jump Left (0-2), Jump Right (3-5)
+// grey_cat.png: 9 frames per row (576 / 64 = 9)
+// Row 1 (y=0): frames 0-8
+// Row 2 (y=64): frames 9-16
+// Row 3 (y=128): frames 17-22
 export const ANIMATION_FRAMES = {
+  // Walk animations (row 1, y=0): frames 0-8
   LEFT_START: 0,
   LEFT_END: 3,
   TURN_FRAME: 4,
   RIGHT_START: 5,
   RIGHT_END: 8,
-  JUMP_LEFT_START: 0,
-  JUMP_LEFT_END: 2,
-  JUMP_RIGHT_START: 3,
-  JUMP_RIGHT_END: 5,
+  // Jump animations (row 3, y=128): frames 17-22
+  JUMP_RIGHT_START: 17,
+  JUMP_RIGHT_END: 19,
+  JUMP_LEFT_START: 20,
+  JUMP_LEFT_END: 22,
+  // Attack animations (row 2, y=64): frames 9-16
+  ATTACK_RIGHT_START: 9,
+  ATTACK_RIGHT_END: 12,
+  ATTACK_LEFT_START: 13,
+  ATTACK_LEFT_END: 16,
 } as const;
 
 // Gravity setting

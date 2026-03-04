@@ -1,6 +1,11 @@
 import { Physics } from "phaser";
 import { PlayerConfig, PlayerState } from "./types/EntityTypes";
-import { ANIMATIONS, ASSETS, ANIMATION_FRAMES, DEFAULT_PLAYER_ASSET } from "../game/constants";
+import {
+  ANIMATIONS,
+  ASSETS,
+  ANIMATION_FRAMES,
+  DEFAULT_PLAYER_ASSET,
+} from "../game/constants";
 import { InputSystem } from "../systems/InputSystem";
 
 export class Player extends Physics.Arcade.Sprite {
@@ -18,12 +23,16 @@ export class Player extends Physics.Arcade.Sprite {
       jumpVelocity: -330,
       jumpDownVelocity: 300,
       gravityY: 300,
+      scale: 0.5,
       ...config,
     };
 
     super(scene, defaultConfig.x, defaultConfig.y, defaultConfig.assetKey);
 
     this.config = defaultConfig;
+    if (defaultConfig.scale) {
+      this.setScale(defaultConfig.scale);
+    }
     this.playerState = {
       isJumping: false,
       isMovingLeft: false,
@@ -43,6 +52,7 @@ export class Player extends Physics.Arcade.Sprite {
   private setProperties(): void {
     this.setBounce(this.config.bounce);
     this.setCollideWorldBounds(true);
+    this.setOrigin(0.5, 1);
   }
 
   private setupPhysics(): void {
@@ -55,8 +65,9 @@ export class Player extends Physics.Arcade.Sprite {
   private setupAnimations(): void {
     const scene = this.scene;
 
+    // Walk animations (row 1, y=0): frames 0-8
     scene.anims.create({
-      key: ANIMATIONS.LEFT,
+      key: ANIMATIONS.RIGHT,
       frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
         start: ANIMATION_FRAMES.LEFT_START,
         end: ANIMATION_FRAMES.LEFT_END,
@@ -72,10 +83,21 @@ export class Player extends Physics.Arcade.Sprite {
     });
 
     scene.anims.create({
-      key: ANIMATIONS.RIGHT,
+      key: ANIMATIONS.LEFT,
       frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
         start: ANIMATION_FRAMES.RIGHT_START,
         end: ANIMATION_FRAMES.RIGHT_END,
+      }),
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    // Jump animations (row 3, y=128): frames 17-22
+    scene.anims.create({
+      key: ANIMATIONS.JUMP_RIGHT,
+      frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
+        start: ANIMATION_FRAMES.JUMP_RIGHT_START,
+        end: ANIMATION_FRAMES.JUMP_RIGHT_END,
       }),
       frameRate: 10,
       repeat: -1,
@@ -86,21 +108,30 @@ export class Player extends Physics.Arcade.Sprite {
       frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
         start: ANIMATION_FRAMES.JUMP_LEFT_START,
         end: ANIMATION_FRAMES.JUMP_LEFT_END,
-        first: 128,
       }),
       frameRate: 10,
       repeat: -1,
     });
 
+    // Attack animations (row 2, y=64): frames 9-16
     scene.anims.create({
-      key: ANIMATIONS.JUMP_RIGHT,
+      key: ANIMATIONS.ATTACK_RIGHT,
       frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
-        start: ANIMATION_FRAMES.JUMP_RIGHT_START,
-        end: ANIMATION_FRAMES.JUMP_RIGHT_END,
-        first: 128,
+        start: ANIMATION_FRAMES.ATTACK_RIGHT_START,
+        end: ANIMATION_FRAMES.ATTACK_RIGHT_END,
       }),
       frameRate: 10,
-      repeat: -1,
+      repeat: 0,
+    });
+
+    scene.anims.create({
+      key: ANIMATIONS.ATTACK_LEFT,
+      frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
+        start: ANIMATION_FRAMES.ATTACK_LEFT_START,
+        end: ANIMATION_FRAMES.ATTACK_LEFT_END,
+      }),
+      frameRate: 10,
+      repeat: 0,
     });
   }
 
@@ -216,7 +247,10 @@ export class Player extends Physics.Arcade.Sprite {
 
     if (this.body.velocity.x > 0) {
       this.setVelocityX(0);
-      this.anims.play(isJumping ? ANIMATIONS.JUMP_RIGHT : ANIMATIONS.TURN, true);
+      this.anims.play(
+        isJumping ? ANIMATIONS.JUMP_RIGHT : ANIMATIONS.TURN,
+        true,
+      );
     } else {
       this.setVelocityX(-this.config.accelerationX);
       this.anims.play(isJumping ? ANIMATIONS.JUMP_LEFT : ANIMATIONS.LEFT, true);
@@ -236,7 +270,10 @@ export class Player extends Physics.Arcade.Sprite {
       this.anims.play(isJumping ? ANIMATIONS.JUMP_LEFT : ANIMATIONS.TURN, true);
     } else {
       this.setVelocityX(this.config.accelerationX);
-      this.anims.play(isJumping ? ANIMATIONS.JUMP_RIGHT : ANIMATIONS.RIGHT, true);
+      this.anims.play(
+        isJumping ? ANIMATIONS.JUMP_RIGHT : ANIMATIONS.RIGHT,
+        true,
+      );
     }
     console.log(
       "🏃 Player MOVE_RIGHT - Velocity set to:",
@@ -249,7 +286,9 @@ export class Player extends Physics.Arcade.Sprite {
     this.setVelocityX(0);
     const isJumping = this.body && !this.body.touching.down;
     if (isJumping) {
-      const lastDirection = this.playerState.isMovingLeft ? ANIMATIONS.JUMP_LEFT : ANIMATIONS.JUMP_RIGHT;
+      const lastDirection = this.playerState.isMovingLeft
+        ? ANIMATIONS.JUMP_LEFT
+        : ANIMATIONS.JUMP_RIGHT;
       this.anims.play(lastDirection, true);
     } else {
       this.anims.play(ANIMATIONS.TURN, true);

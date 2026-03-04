@@ -71,7 +71,8 @@ export class Game extends BaseScene {
     this.player = new Player(this, {
       x: 100,
       y: 440,
-      assetKey: ASSETS.DUDE
+      assetKey: ASSETS.GREY_CAT,
+      scale: 1
     });
     this.add.existing(this.player);
     this.player.initialize();

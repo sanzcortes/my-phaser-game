@@ -39,7 +39,7 @@ export class Preloader extends Scene {
       frameHeight: 32,
     });
     this.load.spritesheet("grey_cat", "grey_cat.png", {
-      frameWidth: 64,
+      frameWidth: 70,
       frameHeight: 64,
     });
     this.load.spritesheet("dude", "dude.png", {
