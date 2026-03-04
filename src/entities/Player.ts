@@ -1,6 +1,6 @@
 import { Physics } from "phaser";
 import { PlayerConfig, PlayerState } from "./types/EntityTypes";
-import { ANIMATIONS, ASSETS, ANIMATION_FRAMES } from "../game/constants";
+import { ANIMATIONS, ASSETS, ANIMATION_FRAMES, DEFAULT_PLAYER_ASSET } from "../game/constants";
 import { InputSystem } from "../systems/InputSystem";
 
 export class Player extends Physics.Arcade.Sprite {
@@ -12,7 +12,7 @@ export class Player extends Physics.Arcade.Sprite {
     const defaultConfig: PlayerConfig = {
       x: 100,
       y: 440,
-      assetKey: ASSETS.DUDE,
+      assetKey: DEFAULT_PLAYER_ASSET,
       bounce: 0.2,
       accelerationX: 160,
       jumpVelocity: -330,
@@ -57,7 +57,7 @@ export class Player extends Physics.Arcade.Sprite {
 
     scene.anims.create({
       key: ANIMATIONS.LEFT,
-      frames: scene.anims.generateFrameNumbers(ASSETS.DUDE, {
+      frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
         start: ANIMATION_FRAMES.LEFT_START,
         end: ANIMATION_FRAMES.LEFT_END,
       }),
@@ -67,15 +67,37 @@ export class Player extends Physics.Arcade.Sprite {
 
     scene.anims.create({
       key: ANIMATIONS.TURN,
-      frames: [{ key: ASSETS.DUDE, frame: ANIMATION_FRAMES.TURN_FRAME }],
+      frames: [{ key: ASSETS.GREY_CAT, frame: ANIMATION_FRAMES.TURN_FRAME }],
       frameRate: 20,
     });
 
     scene.anims.create({
       key: ANIMATIONS.RIGHT,
-      frames: scene.anims.generateFrameNumbers(ASSETS.DUDE, {
+      frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
         start: ANIMATION_FRAMES.RIGHT_START,
         end: ANIMATION_FRAMES.RIGHT_END,
+      }),
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    scene.anims.create({
+      key: ANIMATIONS.JUMP_LEFT,
+      frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
+        start: ANIMATION_FRAMES.JUMP_LEFT_START,
+        end: ANIMATION_FRAMES.JUMP_LEFT_END,
+        first: 128,
+      }),
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    scene.anims.create({
+      key: ANIMATIONS.JUMP_RIGHT,
+      frames: scene.anims.generateFrameNumbers(ASSETS.GREY_CAT, {
+        start: ANIMATION_FRAMES.JUMP_RIGHT_START,
+        end: ANIMATION_FRAMES.JUMP_RIGHT_END,
+        first: 128,
       }),
       frameRate: 10,
       repeat: -1,
@@ -190,13 +212,14 @@ export class Player extends Physics.Arcade.Sprite {
     if (!this.body) return;
 
     this.playerState.isMovingLeft = true;
+    const isJumping = !this.body.touching.down;
 
     if (this.body.velocity.x > 0) {
       this.setVelocityX(0);
-      this.anims.play(ANIMATIONS.TURN, true);
+      this.anims.play(isJumping ? ANIMATIONS.JUMP_RIGHT : ANIMATIONS.TURN, true);
     } else {
       this.setVelocityX(-this.config.accelerationX);
-      this.anims.play(ANIMATIONS.LEFT, true);
+      this.anims.play(isJumping ? ANIMATIONS.JUMP_LEFT : ANIMATIONS.LEFT, true);
     }
     console.log("🏃 Player MOVE_LEFT - Velocity set to:", this.body.velocity.x);
   }
@@ -206,13 +229,14 @@ export class Player extends Physics.Arcade.Sprite {
     if (!this.body) return;
 
     this.playerState.isMovingRight = true;
+    const isJumping = !this.body.touching.down;
 
     if (this.body.velocity.x < 0) {
       this.setVelocityX(0);
-      this.anims.play(ANIMATIONS.TURN, true);
+      this.anims.play(isJumping ? ANIMATIONS.JUMP_LEFT : ANIMATIONS.TURN, true);
     } else {
       this.setVelocityX(this.config.accelerationX);
-      this.anims.play(ANIMATIONS.RIGHT, true);
+      this.anims.play(isJumping ? ANIMATIONS.JUMP_RIGHT : ANIMATIONS.RIGHT, true);
     }
     console.log(
       "🏃 Player MOVE_RIGHT - Velocity set to:",
@@ -223,10 +247,16 @@ export class Player extends Physics.Arcade.Sprite {
   private stopMoving(): void {
     console.log("🛑 Player STOP_MOVING - Stopping movement");
     this.setVelocityX(0);
-    this.anims.play(ANIMATIONS.TURN, true);
+    const isJumping = this.body && !this.body.touching.down;
+    if (isJumping) {
+      const lastDirection = this.playerState.isMovingLeft ? ANIMATIONS.JUMP_LEFT : ANIMATIONS.JUMP_RIGHT;
+      this.anims.play(lastDirection, true);
+    } else {
+      this.anims.play(ANIMATIONS.TURN, true);
+    }
     console.log(
       "🛑 Player STOP_MOVING - Velocity set to:",
-      this.body.velocity.x,
+      this.body?.velocity.x,
     );
   }
 

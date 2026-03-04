@@ -1,6 +1,7 @@
 // Asset names
 export const ASSETS = {
   BACKGROUND: "background",
+  GREY_CAT: "grey_cat",
   DUDE: "dude",
   COIN: "coin",
   ENEMY: "enemy",
@@ -12,7 +13,12 @@ export const ANIMATIONS = {
   LEFT: "left",
   RIGHT: "right",
   TURN: "turn",
+  JUMP_LEFT: "jump_left",
+  JUMP_RIGHT: "jump_right",
 } as const;
+
+// Default player asset
+export const DEFAULT_PLAYER_ASSET = ASSETS.GREY_CAT;
 
 // Player settings
 export const PLAYER = {
@@ -72,12 +78,18 @@ export const PLATFORMS = {
 } as const;
 
 // Frame numbers for animations
+// Row 1 (y=0): Walk Left (0-3), Idle (4), Walk Right (5-8)
+// Row 3 (y=128): Jump Left (0-2), Jump Right (3-5)
 export const ANIMATION_FRAMES = {
   LEFT_START: 0,
   LEFT_END: 3,
   TURN_FRAME: 4,
   RIGHT_START: 5,
   RIGHT_END: 8,
+  JUMP_LEFT_START: 0,
+  JUMP_LEFT_END: 2,
+  JUMP_RIGHT_START: 3,
+  JUMP_RIGHT_END: 5,
 } as const;
 
 // Gravity setting

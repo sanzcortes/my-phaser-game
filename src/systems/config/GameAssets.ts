@@ -17,6 +17,12 @@ export const gameAssets: AssetManifest = {
       frameHeight: 32
     },
     {
+      key: 'grey_cat',
+      path: 'grey_cat.png',
+      frameWidth: 64,
+      frameHeight: 64
+    },
+    {
       key: 'dude',
       path: 'dude.png',
       frameWidth: 32,
